@@ -80,6 +80,7 @@ class MemberApplicationConfig {
         return FanoutExchange("member-created")
     }
 
+
     @Bean
     fun queue() : Queue {
         return AnonymousQueue()

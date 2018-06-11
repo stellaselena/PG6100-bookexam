@@ -10,20 +10,15 @@ import com.stella.bookexam.schema.BookDto
 import com.stella.bookexam.schema.BookForSaleDto
 import com.stella.bookexam.schema.MemberDto
 import io.swagger.annotations.*
-import jdk.internal.org.objectweb.asm.TypeReference
 import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.*
-import org.springframework.security.core.Authentication
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestTemplate
 import javax.validation.ConstraintViolationException
-import java.util.HashMap
-import org.h2.value.DataType.readValue
-import org.hibernate.mapping.Map
 
 
 @Api(value = "/members", description = "API for member entities")
@@ -211,11 +206,11 @@ class MemberController {
     @PatchMapping(path = arrayOf("/{id}"),
             consumes = arrayOf("application/merge-patch+json"))
     fun mergePatchMember(@ApiParam("Id of the Member")
-                       @PathVariable("id")
-                       id: String?,
-                       @ApiParam("The partial patch")
-                       @RequestBody
-                       jsonPatch: String)
+                         @PathVariable("id")
+                         id: String?,
+                         @ApiParam("The partial patch")
+                         @RequestBody
+                         jsonPatch: String)
             : ResponseEntity<Void> {
 
         val dto = repo.findOne(id) ?: return ResponseEntity.status(404).build()
@@ -257,7 +252,7 @@ class MemberController {
             } else if (booksNode != null) {
                 val temp = dto.books
                 val map = jackson.convertValue(booksNode, MutableMap::class.java)
-                for(m in map){
+                for (m in map) {
                     val key = m.key.toString()
                     val value = m.value.toString()
                     dto.books[key] = value.toInt()
@@ -335,28 +330,29 @@ class MemberController {
             return ResponseEntity.status(404).build()
         }
 
-        val response = BookHystrix(bookForSaleDto.name!!).execute()
-        if(response.statusCodeValue != 200){
+        val member = repo.findOne(id)
+
+        if(member.books.containsKey(bookForSaleDto.name)){
+            return ResponseEntity.status(409).build()
+
+        }
+
+        if (bookForSaleDto.price!! <= 0 || bookForSaleDto.soldBy != member.username || bookForSaleDto.name.isNullOrBlank()) {
             return ResponseEntity.status(400).build()
         }
 
-        println("calling book")
-//        try {
-//            val bookUrl = "${bookHost}/books/name/${bookForSaleDto.name}"
-//            val response = rest.getForEntity(bookUrl, BookDto::class.java)
-//            if (response.statusCode.value() != 200) {
-//
-//                return ResponseEntity.status(400).build()
-//            }
-//        }catch (e: Exception){
-//
-//            println("error while calling book 2")
-//
-//            println(e.message)
-//            println(e.stackTrace)
-//            println(e)
-//            return ResponseEntity.status(404).build()
-//        }
+        val response = GetBookByName(bookForSaleDto.name!!).execute()
+        if (response.statusCodeValue != 200) {
+            return ResponseEntity.status(400).build()
+        }
+
+        val postedBookForSale = PostBookForSale(bookForSaleDto).execute()
+        if (postedBookForSale != 200) {
+
+            return ResponseEntity.status(400).build()
+
+        }
+
 
         if (repo.addBook(id, bookForSaleDto.name!!, bookForSaleDto.price!!.toInt())) {
 
@@ -370,7 +366,7 @@ class MemberController {
     }
 
 
-    private inner class BookHystrix(private val name: String)
+    private inner class GetBookByName(private val name: String)
         : HystrixCommand<ResponseEntity<BookDto>>(HystrixCommandGroupKey.Factory.asKey("Call get book")) {
 
         override fun run(): ResponseEntity<BookDto> {
@@ -387,6 +383,32 @@ class MemberController {
 
         override fun getFallback(): ResponseEntity<BookDto> {
             return ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+    }
+
+    private inner class PostBookForSale(private val bookForSaleDto: BookForSaleDto)
+        : HystrixCommand<Int>(HystrixCommandGroupKey.Factory.asKey("Post book for sale")) {
+
+        override fun run(): Int {
+
+            var headers = HttpHeaders()
+            headers.contentType = MediaType.APPLICATION_JSON_UTF8
+
+            val entity = HttpEntity<BookForSaleDto>(
+                    bookForSaleDto, headers)
+            try {
+                val bookUrl = "${bookHost}/books/store"
+                rest.exchange(bookUrl, HttpMethod.POST, entity, Void::class.java)
+            } catch (e: HttpClientErrorException) {
+
+                return 404
+            }
+
+            return 200
+        }
+
+        override fun getFallback(): Int {
+            return 400
         }
     }
 

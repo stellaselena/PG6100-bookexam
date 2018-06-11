@@ -17,6 +17,10 @@ zuul:
       path: /book-server/**
       url: http://book-server:8080/
       sensitive-headers:
+    store-server:
+      path: /store-server/**
+      url: http://store-server:8080/
+      sensitive-headers:
 
 server:
   port: 8080

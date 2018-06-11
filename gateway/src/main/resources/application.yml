@@ -5,6 +5,8 @@ zuul:
       path: /members/**
     book:
       path: /books/**
+    store:
+      path: /store/**
 
 eureka:
   instance:

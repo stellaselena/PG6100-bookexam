@@ -1,18 +1,15 @@
-package com.stella.bookexam.book
+package com.stella.bookexam.store
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import org.springframework.amqp.core.FanoutExchange
+import org.springframework.amqp.core.*
 import org.springframework.boot.autoconfigure.domain.EntityScan
-import org.springframework.cloud.client.loadbalancer.LoadBalanced
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Profile
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
-import org.springframework.web.client.RestTemplate
 import springfox.documentation.builders.ApiInfoBuilder
 import springfox.documentation.builders.PathSelectors
 import springfox.documentation.service.ApiInfo
@@ -20,12 +17,13 @@ import springfox.documentation.spi.DocumentationType
 import springfox.documentation.spring.web.plugins.Docket
 import springfox.documentation.swagger2.annotations.EnableSwagger2
 
-
 @Configuration
 @EnableSwagger2
-@EnableJpaRepositories(basePackages = arrayOf("com.stella.bookexam.book"))
-@EntityScan(basePackages = arrayOf("com.stella.bookexam.book"))
-class BookApplicationConfig {
+@EnableJpaRepositories(basePackages = arrayOf("com.stella.bookexam.store"))
+@EntityScan(basePackages = arrayOf("com.stella.bookexam.store"))
+class StoreApplicationConfig {
+
+
     @Bean
     fun swaggerApi(): Docket {
         return Docket(DocumentationType.SWAGGER_2)
@@ -37,8 +35,8 @@ class BookApplicationConfig {
 
     private fun apiInfo(): ApiInfo {
         return ApiInfoBuilder()
-                .title("API for book entities")
-                .description("MicroService that Contains book entity repository")
+                .title("API for entity store")
+                .description("Micro-service for Store entity.")
                 .version("1.0")
                 .build()
     }
@@ -47,27 +45,24 @@ class BookApplicationConfig {
     fun jsonObjectMapper(): ObjectMapper {
         return Jackson2ObjectMapperBuilder.json()
                 .serializationInclusion(JsonInclude.Include.NON_NULL)
-                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) //ISODate
+                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .modules(JavaTimeModule())
                 .build()
     }
 
     @Bean
-    fun fanout() : FanoutExchange {
+    fun fanout(): FanoutExchange {
         return FanoutExchange("bookforsale-created")
     }
 
-    @LoadBalanced
     @Bean
-    @Profile("docker")
-    fun restTemplateBalancer(): RestTemplate {
-        return RestTemplate()
+    fun queue() : Queue {
+        return AnonymousQueue()
     }
 
     @Bean
-    @Profile("!docker")
-    fun restTemplate() : RestTemplate {
-        return RestTemplate()
+    fun binding(fanout: FanoutExchange, queue: Queue) : Binding {
+        return BindingBuilder.bind(queue).to(fanout)
     }
 
 }

@@ -1,0 +1,7 @@
+server:
+  port: 7083
+spring:
+  session:
+    # during testing for this service in isolation,
+    # do not use Redis
+    store-type: hash_map

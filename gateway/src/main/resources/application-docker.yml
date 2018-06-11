@@ -5,7 +5,8 @@ zuul:
       path: /members/**
     book:
       path: /books/**
-
+    store:
+      path: /store/**
 
 spring:
   application:

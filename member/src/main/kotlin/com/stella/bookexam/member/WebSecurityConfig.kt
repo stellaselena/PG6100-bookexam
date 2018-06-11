@@ -18,7 +18,7 @@ class WebSecurityConfig : WebSecurityConfigurerAdapter() {
         http.httpBasic()
                 .and()
                 .authorizeRequests()
-                .antMatchers("/swagger-ui.html").permitAll()
+                .antMatchers("/v2/api-docs", "/configuration/**", "/swagger-resources/**", "/swagger-ui.html", "/webjars/**", "/api-docs/**").permitAll()
                 .antMatchers(HttpMethod.PATCH, "/members/{id}/**").access("hasRole('USER') and @userSecurity.checkId(authentication, #id)")
                 .antMatchers(HttpMethod.PUT, "/members/{id}/**").access("hasRole('USER') and @userSecurity.checkId(authentication, #id)")
                 .antMatchers(HttpMethod.POST, "/members/{id}/**").access("hasRole('USER') and @userSecurity.checkId(authentication, #id)")

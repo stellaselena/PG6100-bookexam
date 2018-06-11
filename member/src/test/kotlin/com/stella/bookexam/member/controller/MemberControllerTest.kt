@@ -333,6 +333,12 @@ class MemberControllerTest : WiremockTestBase() {
                                 WireMock.aResponse()
                                         .withStatus(200)))
 
+        wireMockServerBook.stubFor(
+                WireMock.post(WireMock.urlMatching(".*/books/store"))
+                        .willReturn(
+                                WireMock.aResponse()
+                                        .withStatus(200)))
+
         RestAssured.given()
                 .auth().basic("foo", "123")
                 .pathParam("id", memberDto1.id)

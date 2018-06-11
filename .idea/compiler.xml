@@ -11,6 +11,7 @@
         <module name="gateway" />
         <module name="member" />
         <module name="schema" />
+        <module name="store" />
       </profile>
     </annotationProcessing>
   </component>

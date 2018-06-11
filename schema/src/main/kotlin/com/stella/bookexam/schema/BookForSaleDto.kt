@@ -14,6 +14,9 @@ data class BookForSaleDto(
         var soldBy: String?=null,
 
         @ApiModelProperty("Price that the book is selling for")
-        var price: Int?=null
+        var price: Int?=null,
+
+        @ApiModelProperty("Id of the book that a user is selling")
+        var id: String?=null
 
 ) : Serializable

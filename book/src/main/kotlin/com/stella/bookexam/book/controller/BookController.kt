@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.stella.bookexam.book.domain.converter.BookConverter
 import com.stella.bookexam.book.repository.BookRepository
+import com.stella.bookexam.book.services.AmqpService
 import com.stella.bookexam.schema.BookDto
+import com.stella.bookexam.schema.BookForSaleDto
 import io.swagger.annotations.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -25,6 +27,9 @@ import javax.validation.ConstraintViolationException
 class BookController {
     @Autowired
     private lateinit var repo: BookRepository
+
+    @Autowired
+    lateinit var amqpService: AmqpService
 
     @Autowired
     private lateinit var rest: RestTemplate
@@ -98,7 +103,6 @@ class BookController {
                     @PathVariable("id")
                     pathId: String?)
             : ResponseEntity<BookDto> {
-        println("entered book method")
 
         val id: Long
         try {
@@ -106,7 +110,6 @@ class BookController {
         } catch (e: Exception) {
             return ResponseEntity.status(400).build()
         }
-        println("trying to convert book")
 
         val dto = repo.findOne(id) ?: return ResponseEntity.status(404).build()
 
@@ -218,6 +221,29 @@ class BookController {
             return ResponseEntity.status(400).build()
         }
         return ResponseEntity.status(204).build()
+    }
+
+    @ApiOperation("Post books for sale")
+    @PostMapping(path = arrayOf("/store"), consumes = arrayOf(MediaType.APPLICATION_JSON_UTF8_VALUE))
+    @ApiResponses(
+            ApiResponse(code = 400, message = "Body is not correct"),
+            ApiResponse(code = 400, message = "Book for sale posted")
+    )
+    fun postBookForSale(@ApiParam("Name of book")
+                      @RequestBody
+                      bookForSaleDto: BookForSaleDto)
+            : ResponseEntity<Void> {
+
+        try {
+
+            amqpService.sendBookForSale(bookForSaleDto)
+
+        } catch (e: Exception) {
+
+
+        }
+
+        return ResponseEntity.ok().build()
     }
 
     /**Even though merge patch should allow to set fields to null, we cannot do this here since all book fields are mandatory**/

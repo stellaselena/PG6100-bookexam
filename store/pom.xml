@@ -8,8 +8,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>book</artifactId>
-
+    <artifactId>store</artifactId>
 
     <dependencies>
         <dependency>
@@ -130,6 +129,8 @@
         </dependency>
 
 
+
+
     </dependencies>
 
     <build>
@@ -140,7 +141,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <finalName>book</finalName>
+                    <finalName>store</finalName>
                 </configuration>
             </plugin>
         </plugins>

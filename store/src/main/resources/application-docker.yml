@@ -8,7 +8,7 @@ eureka:
       defaultZone: http://eureka:8761/eureka/
 spring:
   application:
-    name: book-server
+    name: store-server
   session:
     # specify that session tokes should be stored in Redis
     store-type: redis
@@ -18,7 +18,7 @@ spring:
   rabbitmq:
     host: rabbitmq
   datasource:
-    url: "jdbc:postgresql://postgres-book:5432/postgres"
+    url: "jdbc:postgresql://postgres-store:5432/postgres"
     username: "postgres"
     password: ""
     driver-class-name: "org.postgresql.Driver"

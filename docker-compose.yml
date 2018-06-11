@@ -8,6 +8,8 @@ services:
     image: "postgres:10"
   postgres-book:
     image: "postgres:10"
+  postgres-store:
+    image: "postgres:10"
 
   redis:
     image: "redis:latest"
@@ -18,8 +20,8 @@ services:
     build:
       context: ./eureka
       dockerfile: Dockerfile
-    ports:
-      - "8761:8761"
+#    ports:
+#      - "8761:8761"
 
   member-server:
     build:
@@ -40,6 +42,7 @@ services:
 #      - "8082:8080"
     depends_on:
       - eureka
+      - rabbitmq
       - redis
       - postgres-book
 
@@ -51,8 +54,22 @@ services:
 #      - "8082:8080"
     depends_on:
       - eureka
+      - rabbitmq
       - redis
       - postgres-book
+
+  store-server:
+    build:
+      context: ./store
+      dockerfile: Dockerfile
+#    ports:
+#      - "8083:8080"
+    depends_on:
+      - eureka
+      - rabbitmq
+      - redis
+      - postgres-store
+
 
   gateway:
     build:
@@ -67,3 +84,4 @@ services:
       - postgres-user
       - member-server
       - book-server
+      - store-server

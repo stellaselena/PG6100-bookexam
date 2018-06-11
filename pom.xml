@@ -16,6 +16,7 @@
         <module>book</module>
         <module>member</module>
         <module>gateway</module>
+        <module>store</module>
     </modules>
 
     <properties>
