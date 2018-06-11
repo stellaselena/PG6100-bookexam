@@ -229,7 +229,7 @@ class BookControllerTest : TestBase() {
                 .pathParam("id", savedId)
                 .contentType(ContentType.TEXT)
                 .body(bookDto2.price.toString())
-                .patch("/{id}")
+                .patch("/{id}/price")
                 .then()
                 .statusCode(204)
 
@@ -263,7 +263,7 @@ class BookControllerTest : TestBase() {
                 .pathParam("id", savedId)
                 .contentType(ContentType.TEXT)
                 .body(bookDto2.price.toString())
-                .patch("/{id}")
+                .patch("/{id}/price")
                 .then()
                 .statusCode(403)
 
@@ -276,6 +276,38 @@ class BookControllerTest : TestBase() {
                 .body("price", CoreMatchers.equalTo(bookDto1.price))
 
     }
+
+    /**Try to merge patch a book**/
+    @Test
+    fun testUpdateBook_MergePatch() {
+        val bookDto1 = getValidBookDtos()[0]
+
+        val savedId = RestAssured.given().auth().basic("admin", "admin").contentType(ContentType.JSON)
+                .body(bookDto1)
+                .post()
+                .then()
+                .statusCode(201)
+                .extract()
+                .`as`(Long::class.java)
+
+
+        RestAssured.given().auth().basic("admin", "admin")
+                .pathParam("id", savedId)
+                .contentType("application/merge-patch+json")
+                .body("{\"name\":null, \"description\":null, \"genre\":\"newGenre\", \"price\":30, \"rating\":2}")
+                .patch("/{id}")
+                .then()
+                .statusCode(204)
+
+        RestAssured.given()
+                .pathParam("id", savedId)
+                .get("/{id}")
+                .then()
+                .statusCode(200)
+                .body("price", CoreMatchers.equalTo(30))
+
+    }
+
 
     /**Delete book**/
     @Test
@@ -322,6 +354,7 @@ class BookControllerTest : TestBase() {
                 .then()
                 .statusCode(404)
     }
+
 
     private fun postBookDto(bookDto: BookDto, expectedStatusCode: Int) {
         RestAssured.given().auth().basic("admin", "admin").contentType(ContentType.JSON)

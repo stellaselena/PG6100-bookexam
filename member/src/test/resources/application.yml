@@ -1,0 +1,9 @@
+server:
+  port: 7081
+spring:
+  session:
+    # during testing for this service in isolation,
+    # do not use Redis
+    store-type: hash_map
+
+bookServerName: http://localhost:8082
