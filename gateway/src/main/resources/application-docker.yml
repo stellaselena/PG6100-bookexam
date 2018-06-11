@@ -1,0 +1,24 @@
+
+zuul:
+  routes:
+    member:
+      path: /members/**
+    book:
+      path: /books/**
+
+
+spring:
+  application:
+    name: gateway
+
+eureka:
+  instance:
+    preferIpAddress: true
+  client:
+    healthcheck:
+      enabled: true
+    serviceUrl:
+      defaultZone: http://eureka:8761/eureka/
+server:
+  port: 8080
+  contextPath: /api/v1

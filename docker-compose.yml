@@ -1,0 +1,69 @@
+version: '3.3'
+
+services:
+
+  postgres-user:
+    image: "postgres:10"
+  postgres-member:
+    image: "postgres:10"
+  postgres-book:
+    image: "postgres:10"
+
+  redis:
+    image: "redis:latest"
+  rabbitmq:
+    image: "rabbitmq:3"
+
+  eureka:
+    build:
+      context: ./eureka
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+
+  member-server:
+    build:
+      context: ./member
+      dockerfile: Dockerfile
+#    ports:
+#      - "8081:8080"
+    depends_on:
+      - eureka
+      - rabbitmq
+      - redis
+
+  book-server:
+    build:
+      context: ./book
+      dockerfile: Dockerfile
+#    ports:
+#      - "8082:8080"
+    depends_on:
+      - eureka
+      - redis
+      - postgres-book
+
+  book-server-2:
+    build:
+      context: ./book
+      dockerfile: Dockerfile
+#    ports:
+#      - "8082:8080"
+    depends_on:
+      - eureka
+      - redis
+      - postgres-book
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    ports:
+      - "10000:8080"
+    depends_on:
+      - redis
+      - eureka
+      - rabbitmq
+      - postgres-user
+      - member-server
+      - book-server

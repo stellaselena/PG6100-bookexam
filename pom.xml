@@ -15,6 +15,7 @@
         <module>schema</module>
         <module>book</module>
         <module>member</module>
+        <module>gateway</module>
     </modules>
 
     <properties>

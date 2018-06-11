@@ -7,6 +7,7 @@ import com.netflix.hystrix.HystrixCommandGroupKey
 import com.stella.bookexam.member.domain.converter.MemberConverter
 import com.stella.bookexam.member.repository.MemberRepository
 import com.stella.bookexam.schema.BookDto
+import com.stella.bookexam.schema.BookForSaleDto
 import com.stella.bookexam.schema.MemberDto
 import io.swagger.annotations.*
 import jdk.internal.org.objectweb.asm.TypeReference
@@ -318,33 +319,46 @@ class MemberController {
 
 
     @ApiOperation("Adds a book to member")
-    @PostMapping(path = arrayOf("/{id}/books"), consumes = arrayOf(MediaType.APPLICATION_FORM_URLENCODED_VALUE))
+    @PostMapping(path = arrayOf("/{id}/books"), consumes = arrayOf(MediaType.APPLICATION_JSON_UTF8_VALUE))
 
     @ApiResponses(
             ApiResponse(code = 200, message = "Book was successfully added to Member"),
-            ApiResponse(code = 400, message = "Book-id sent in body is not correct"),
+            ApiResponse(code = 400, message = "Book  sent in body is not correct"),
             ApiResponse(code = 404, message = "Could not find member or book with specified id")
     )
     fun addBookToMember(@PathVariable("id")
                         id: String,
-                        @ModelAttribute(name = "bookId") bookId: String,
-                        @ModelAttribute(name = "price") price: String)
+                        @RequestBody bookForSaleDto: BookForSaleDto)
             : ResponseEntity<Void> {
 
         if (!repo.exists(id)) {
             return ResponseEntity.status(404).build()
         }
 
-        val response = BookHystrix(bookId).execute()
-
-        if (response.statusCodeValue != 200) {
-
-            return ResponseEntity.status(404).build()
+        val response = BookHystrix(bookForSaleDto.name!!).execute()
+        if(response.statusCodeValue != 200){
+            return ResponseEntity.status(400).build()
         }
 
-        val member = repo.findOne(id)
+        println("calling book")
+//        try {
+//            val bookUrl = "${bookHost}/books/name/${bookForSaleDto.name}"
+//            val response = rest.getForEntity(bookUrl, BookDto::class.java)
+//            if (response.statusCode.value() != 200) {
+//
+//                return ResponseEntity.status(400).build()
+//            }
+//        }catch (e: Exception){
+//
+//            println("error while calling book 2")
+//
+//            println(e.message)
+//            println(e.stackTrace)
+//            println(e)
+//            return ResponseEntity.status(404).build()
+//        }
 
-        if (repo.addBook(id, member.username, price.toInt())) {
+        if (repo.addBook(id, bookForSaleDto.name!!, bookForSaleDto.price!!.toInt())) {
 
             return ResponseEntity.status(200).build()
 
@@ -356,13 +370,13 @@ class MemberController {
     }
 
 
-    private inner class BookHystrix(private val bookId: String)
+    private inner class BookHystrix(private val name: String)
         : HystrixCommand<ResponseEntity<BookDto>>(HystrixCommandGroupKey.Factory.asKey("Call get book")) {
 
         override fun run(): ResponseEntity<BookDto> {
 
             val response: ResponseEntity<BookDto> = try {
-                val bookUrl = "${bookHost}/books/$bookId"
+                val bookUrl = "${bookHost}/books/name/$name"
                 rest.getForEntity(bookUrl, BookDto::class.java)
             } catch (e: HttpClientErrorException) {
                 return ResponseEntity.status(404).build()

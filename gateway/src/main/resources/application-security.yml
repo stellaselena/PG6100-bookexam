@@ -1,0 +1,51 @@
+eureka:
+  instance:
+    preferIpAddress: true
+  client:
+    healthcheck:
+      enabled: true
+    serviceUrl:
+      defaultZone: http://eureka:8761/eureka/
+
+zuul:
+  routes:
+    member-server:
+      path: /member-server/**
+      url: http://member-server:8080/
+      sensitive-headers:
+    book-server:
+      path: /book-server/**
+      url: http://book-server:8080/
+      sensitive-headers:
+
+server:
+  port: 8080
+  contextPath: /api/v1
+
+spring:
+  application:
+    name: gateway
+  rabbitmq:
+    host: rabbitmq
+  datasource:
+    url: "jdbc:postgresql://postgres-user:5432/postgres"
+    username: "postgres"
+    password: ""
+    driver-class-name: "org.postgresql.Driver"
+  jpa:
+    show-sql: true
+    database: "postgresql"
+    hibernate:
+      ddl-auto: "update"
+  session:
+    store-type: redis
+  redis:
+    host: redis
+    port: 6379
+
+security:
+  sessions: ALWAYS
+
+logging:
+  level:
+    org.springframework.security: debug

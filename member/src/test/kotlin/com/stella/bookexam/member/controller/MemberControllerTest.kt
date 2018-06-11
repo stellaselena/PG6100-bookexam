@@ -2,6 +2,7 @@ package com.stella.bookexam.member.controller
 
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.stella.bookexam.schema.BookDto
+import com.stella.bookexam.schema.BookForSaleDto
 import com.stella.bookexam.schema.MemberDto
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
@@ -327,26 +328,22 @@ class MemberControllerTest : WiremockTestBase() {
 
         //mock the book that we're looking for
         wireMockServerBook.stubFor(
-                WireMock.get(WireMock.urlMatching(".*/books/1"))
+                WireMock.get(WireMock.urlMatching(".*/books/name/bookforsale"))
                         .willReturn(
                                 WireMock.aResponse()
                                         .withStatus(200)))
 
-
-        val bookDto = BookDto(id = 1.toString())
-
         RestAssured.given()
                 .auth().basic("foo", "123")
-                .contentType(ContentType.URLENC)
                 .pathParam("id", memberDto1.id)
-                .formParam("bookId", bookDto.id)
-                .formParam("price", "20")
+                .contentType(ContentType.JSON)
+                .body(BookForSaleDto("bookforsale", memberDto1.username, 30))
                 .post("/{id}/books")
                 .then()
                 .statusCode(200)
     }
 
-    /**Should return 404 Not Found when adding a book which doesn't exist (after checking against book server if the book exists)**/
+    /**Should return 404 Not Found when adding a book which doesn't exist (after checking against book server)**/
     @Test
     fun testAddBooksForSale_BookNotFound(){
         val memberDto1 = getValidMemberDtos()[0]
@@ -358,17 +355,20 @@ class MemberControllerTest : WiremockTestBase() {
                 .statusCode(201)
 
 
-        val bookDto = BookDto(id = 1.toString())
+        wireMockServerBook.stubFor(
+                WireMock.get(WireMock.urlMatching(".*/books/name/bookforsale"))
+                        .willReturn(
+                                WireMock.aResponse()
+                                        .withStatus(404)))
 
         RestAssured.given()
                 .auth().basic("foo", "123")
-                .contentType(ContentType.URLENC)
                 .pathParam("id", memberDto1.id)
-                .formParam("bookId", bookDto.id)
-                .formParam("price", "20")
+                .contentType(ContentType.JSON)
+                .body(BookForSaleDto("bookforsale", memberDto1.username, 30))
                 .post("/{id}/books")
                 .then()
-                .statusCode(404)
+                .statusCode(400)
     }
 
     /**Try to add a book to another member's account, should return 403**/

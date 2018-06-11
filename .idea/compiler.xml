@@ -8,6 +8,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="book" />
         <module name="eureka" />
+        <module name="gateway" />
         <module name="member" />
         <module name="schema" />
       </profile>

@@ -102,7 +102,7 @@ class BookControllerTest : TestBase() {
                 .get().then().statusCode(200).body("size()", CoreMatchers.equalTo(0))
     }
 
-    /**Get books by searching for their name**/
+    /**Get a book by searching for its name**/
     @Test
     fun testGetBookByName() {
         val bookDto1 = getValidBookDtos()[0]
@@ -113,27 +113,15 @@ class BookControllerTest : TestBase() {
 
         RestAssured.given().get().then().statusCode(200).body("size()", CoreMatchers.equalTo(2))
 
-        // Check for name that doesn't exist
-        val firstResult = RestAssured.given()
-                .contentType(ContentType.JSON)
-                .param("name", bookDto1.name?.repeat(10))
-                .get()
+        val result = RestAssured.given().auth().basic("admin", "admin").contentType(ContentType.JSON)
+                .pathParam("name", bookDto1.name)
+                .get("/name/{name}")
                 .then()
                 .statusCode(200)
                 .extract()
-                .`as`(Array<BookDto>::class.java)
-        Assert.assertEquals(0, firstResult.count())
+                .`as`(BookDto::class.java)
 
-        val secondResult = RestAssured.given().auth().basic("admin", "admin").contentType(ContentType.JSON)
-                .param("name", bookDto1.name)
-                .get()
-                .then()
-                .statusCode(200)
-                .extract()
-                .`as`(Array<BookDto>::class.java)
-
-        Assert.assertEquals(1, secondResult.count())
-        Assert.assertEquals(bookDto1.name, secondResult[0].name)
+        Assert.assertEquals(result.name, bookDto1.name)
     }
 
     /**Update book**/

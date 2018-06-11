@@ -98,14 +98,35 @@ class BookController {
                     @PathVariable("id")
                     pathId: String?)
             : ResponseEntity<BookDto> {
+        println("entered book method")
+
         val id: Long
         try {
             id = pathId!!.toLong()
         } catch (e: Exception) {
             return ResponseEntity.status(400).build()
         }
+        println("trying to convert book")
 
         val dto = repo.findOne(id) ?: return ResponseEntity.status(404).build()
+
+        return ResponseEntity.ok(BookConverter.transform(dto))
+    }
+
+    @ApiOperation("Get book specified by name")
+    @GetMapping(path = arrayOf("/name/{name}"))
+    @ApiResponses(
+            ApiResponse(code = 400, message = "Name is not correct"),
+            ApiResponse(code = 404, message = "Could not find book")
+    )
+    fun getBookByName(@ApiParam("Name of book")
+                    @PathVariable("name")
+                    name: String)
+            : ResponseEntity<BookDto> {
+
+
+        val dto = repo.findAllByName(name).firstOrNull() ?: return ResponseEntity.status(404).build()
+
         return ResponseEntity.ok(BookConverter.transform(dto))
     }
 
