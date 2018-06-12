@@ -239,6 +239,7 @@ class BookController {
             amqpService.sendBookForSale(bookForSaleDto)
 
         } catch (e: Exception) {
+            return ResponseEntity.status(409).build()
 
 
         }

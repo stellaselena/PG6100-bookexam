@@ -315,10 +315,9 @@ class MemberController {
 
     @ApiOperation("Adds a book to member")
     @PostMapping(path = arrayOf("/{id}/books"), consumes = arrayOf(MediaType.APPLICATION_JSON_UTF8_VALUE))
-
     @ApiResponses(
             ApiResponse(code = 200, message = "Book was successfully added to Member"),
-            ApiResponse(code = 400, message = "Book  sent in body is not correct"),
+            ApiResponse(code = 405, message = "Something is wrong with the book body"),
             ApiResponse(code = 404, message = "Could not find member or book with specified id")
     )
     fun addBookToMember(@PathVariable("id")
@@ -330,6 +329,7 @@ class MemberController {
             return ResponseEntity.status(404).build()
         }
 
+
         val member = repo.findOne(id)
 
         if(member.books.containsKey(bookForSaleDto.name)){
@@ -337,14 +337,18 @@ class MemberController {
 
         }
 
+
         if (bookForSaleDto.price!! <= 0 || bookForSaleDto.soldBy != member.id || bookForSaleDto.name.isNullOrBlank()) {
             return ResponseEntity.status(400).build()
         }
+
 
         val response = GetBookByName(bookForSaleDto.name!!).execute()
         if (response.statusCodeValue != 200) {
             return ResponseEntity.status(400).build()
         }
+
+
 
         val postedBookForSale = PostBookForSale(bookForSaleDto).execute()
         if (postedBookForSale != 200) {

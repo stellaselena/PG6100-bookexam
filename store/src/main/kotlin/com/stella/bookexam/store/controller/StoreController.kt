@@ -40,15 +40,15 @@ class StoreController {
     )
     fun createBookForSale(
             @ApiParam("Book for sale")
-            @RequestBody resultDto: BookForSaleDto
+            @RequestBody bookForSaleDto: BookForSaleDto
     ): ResponseEntity<Long> {
 
-        if (!validDto(resultDto)) {
+        if (!validDto(bookForSaleDto)) {
             return ResponseEntity.status(400).build()
         }
 
         try {
-            val id = registerBookForSale(resultDto)
+            val id = registerBookForSale(bookForSaleDto)
             return ResponseEntity.status(201).body(id)
         } catch (e: ConstraintViolationException) {
             return ResponseEntity.status(409).build()

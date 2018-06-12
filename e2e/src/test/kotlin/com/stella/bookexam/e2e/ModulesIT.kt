@@ -1,6 +1,8 @@
 package com.stella.bookexam.e2e
 
 import com.stella.bookexam.schema.BookDto
+import com.stella.bookexam.schema.BookForSaleDto
+import com.stella.bookexam.schema.MemberDto
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import org.awaitility.Awaitility
@@ -85,10 +87,7 @@ class ModulesIT {
 
         /**Performing GET requests to book-server while not authenticated will return 401 status code**/
 
-        RestAssured.given().
-                get("/api/v1/book-server/books").
-                then().
-                statusCode(401)
+        RestAssured.given().get("/api/v1/book-server/books").then().statusCode(401)
 
         /**When authenticated, both USER and ADMIN roles can perform GET requests to book-server**/
 
@@ -96,11 +95,9 @@ class ModulesIT {
         val id = createUniqueId()
         val cookies = registerUser(id, "password", "USER")
 
-        RestAssured.given().
-                cookie("SESSION", cookies.session)
+        RestAssured.given().cookie("SESSION", cookies.session)
                 .get("/api/v1/book-server/books")
-                .then().
-                        statusCode(200)
+                .then().statusCode(200)
 
         /**An user cannot perform POST requests to book-server**/
 
@@ -188,6 +185,19 @@ class ModulesIT {
                 .then()
                 .statusCode(204)
 
+        //Get the updated book
+        val returnedBook = RestAssured.given()
+                .cookie("SESSION", cookies2.session)
+                .header("X-XSRF-TOKEN", cookies2.csrf)
+                .cookie("XSRF-TOKEN", cookies2.csrf)
+                .pathParam("id", bookId)
+                .contentType(ContentType.JSON)
+                .get("/api/v1/book-server/books/{id}")
+                .then()
+                .statusCode(200)
+                .extract()
+                .`as`(BookDto::class.java)
+
         /**An user cannot perform DELETE requests to book-server**/
 
         RestAssured.given()
@@ -218,7 +228,7 @@ class ModulesIT {
 
         /**RabbitMq(when creating user send a message to member module and create a member for that user**/
 
-        Awaitility.await().atMost(10, TimeUnit.SECONDS)
+        Awaitility.await().atMost(100, TimeUnit.SECONDS)
                 .ignoreExceptions()
                 .until({
                     RestAssured.given().cookie("SESSION", cookies.session)
@@ -230,13 +240,248 @@ class ModulesIT {
                     true
                 })
 
-//                .antMatchers("/v2/api-docs", "/configuration/**", "/swagger-resources/**", "/swagger-ui.html", "/webjars/**", "/api-docs/**").permitAll()
-//                .antMatchers(HttpMethod.PATCH, "/members/{id}/**").access("hasRole('USER') and @userSecurity.checkId(authentication, #id)")
-//                .antMatchers(HttpMethod.PUT, "/members/{id}/**").access("hasRole('USER') and @userSecurity.checkId(authentication, #id)")
-//                .antMatchers(HttpMethod.POST, "/members/{id}/**").access("hasRole('USER') and @userSecurity.checkId(authentication, #id)")
-//                .antMatchers(HttpMethod.DELETE, "/members/{id}/**").access("hasRole('USER') and @userSecurity.checkId(authentication, #id)")
-//                .antMatchers(HttpMethod.POST, "/members/{id}/books").access("hasRole('USER') and @userSecurity.checkId(authentication, #id)")
-//                .antMatchers(HttpMethod.POST, "/members").hasRole("USER")
-//                .antMatchers(HttpMethod.GET, "/members/**").permitAll()
+        /**All authenticated users can perform GET request to member-server**/
+
+        RestAssured.given()
+                .get("/api/v1/member-server/members")
+                .then()
+                .statusCode(401)
+
+        RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .get("/api/v1/member-server/members")
+                .then()
+                .statusCode(200)
+
+        /**A logged in user is be able to perform PUT requests (i.e. changing his info), but not of other users**/
+
+        //find the members created via RabbitMq
+        val member1 = RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .pathParam("id", id)
+                .contentType(ContentType.JSON)
+                .get("/api/v1/member-server/members/{id}")
+                .then()
+                .statusCode(200)
+                .extract()
+                .`as`(MemberDto::class.java)
+
+        val member2 = RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .pathParam("id", id)
+                .contentType(ContentType.JSON)
+                .get("/api/v1/member-server/members/{id}")
+                .then()
+                .statusCode(200)
+                .extract()
+                .`as`(MemberDto::class.java)
+
+        val memberDto = MemberDto("foobar", member1.books, id)
+
+        //Try to modify own info
+        RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .header("X-XSRF-TOKEN", cookies.csrf)
+                .cookie("XSRF-TOKEN", cookies.csrf)
+                .pathParam("id", id)
+                .contentType(ContentType.JSON)
+                .body(memberDto)
+                .put("/api/v1/member-server/members/{id}")
+                .then()
+                .statusCode(204)
+
+        //Try to modify info of another user
+        RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .header("X-XSRF-TOKEN", cookies.csrf)
+                .cookie("XSRF-TOKEN", cookies.csrf)
+                .pathParam("id", id2)
+                .contentType(ContentType.JSON)
+                .body(memberDto)
+                .put("/api/v1/member-server/members/{id}")
+                .then()
+                .statusCode(403)
+
+        /**A logged in user is able to specify books that he has a copy of
+         *  that he wants to sell and for how much, but not for other users.
+         *
+         *  When a user successfully adds a book for sale, the book server is
+         *  notified, and then sends a message to store-server via RabbitMq,
+         *  which then posts the book for sale
+         *  **/
+
+        val bookForSaleDto = BookForSaleDto(name = returnedBook.name, soldBy = member1.username, price = 30)
+
+        //Add a book that a member is selling
+//        RestAssured.given()
+//                .cookie("SESSION", cookies.session)
+//                .header("X-XSRF-TOKEN", cookies.csrf)
+//                .cookie("XSRF-TOKEN", cookies.csrf)
+//                .pathParam("id", member1.id)
+//                .contentType("APPLICATION_JSON_UTF8_VALUE")
+//                .body(bookForSale)
+//                .post("/api/v1/member-server/members/{id}/books")
+//                .then()
+//                .statusCode(200)
+
+        //Try to do the same for another user
+        RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .header("X-XSRF-TOKEN", cookies.csrf)
+                .cookie("XSRF-TOKEN", cookies.csrf)
+                .pathParam("id", id2)
+                .contentType(ContentType.JSON)
+                .body(bookForSaleDto)
+                .post("/api/v1/member-server/members/{id}/books")
+                .then()
+                .statusCode(403)
+
+
+        /**A logged in user is be able to perform PATCH requests, but not for other users**/
+
+        //Json merge patch
+        RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .header("X-XSRF-TOKEN", cookies.csrf)
+                .cookie("XSRF-TOKEN", cookies.csrf)
+                .pathParam("id", id)
+                .contentType("application/merge-patch+json")
+                .body("{\"username\":null, \"books\":{\"book10\": 15}}")
+                .patch("/api/v1/member-server/members/{id}")
+                .then()
+                .statusCode(204)
+
+        //Try the same for another user
+        RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .header("X-XSRF-TOKEN", cookies.csrf)
+                .cookie("XSRF-TOKEN", cookies.csrf)
+                .pathParam("id", id2)
+                .contentType("application/merge-patch+json")
+                .body("{\"username\":null, \"books\":{\"book10\": 15}}")
+                .patch("/api/v1/member-server/members/{id}")
+                .then()
+                .statusCode(403)
+
+
+        /**A logged in user is be able to perform DELETE requests, but not for other users**/
+
+        RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .header("X-XSRF-TOKEN", cookies.csrf)
+                .cookie("XSRF-TOKEN", cookies.csrf)
+                .pathParam("id", id)
+                .delete("/api/v1/member-server/members/{id}")
+                .then()
+                .statusCode(204)
+
+        RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .header("X-XSRF-TOKEN", cookies.csrf)
+                .cookie("XSRF-TOKEN", cookies.csrf)
+                .pathParam("id", id2)
+                .delete("/api/v1/member-server/members/{id}")
+                .then()
+                .statusCode(403)
+
+        /***********************************************Region Store API***********************************************/
+
+        /**Only logged in users can access the book store**/
+
+        RestAssured.given()
+                .get("/api/v1/store-server/store")
+                .then().statusCode(401)
+
+        RestAssured.given().cookie("SESSION", cookies.session)
+                .get("/api/v1/store-server/store")
+                .then().statusCode(200)
+
+
+
+        /**Only from the store can users can also sell books they want to sell
+         *  that are not listed in existing books**/
+
+        val bookForSaleId = RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .header("X-XSRF-TOKEN", cookies.csrf)
+                .cookie("XSRF-TOKEN", cookies.csrf)
+                .contentType(ContentType.JSON)
+                .body(BookForSaleDto("new book by foo", id, 5))
+                .post("/api/v1/store-server/store")
+                .then()
+                .statusCode(201)
+                .extract()
+                .`as`(Long::class.java)
+
+        val bookForSaleId2 = RestAssured.given()
+                .cookie("SESSION", cookies2.session)
+                .header("X-XSRF-TOKEN", cookies2.csrf)
+                .cookie("XSRF-TOKEN", cookies2.csrf)
+                .contentType(ContentType.JSON)
+                .body(BookForSaleDto("new book", id2, 5))
+                .post("/api/v1/store-server/store")
+                .then()
+                .statusCode(201)
+                .extract()
+                .`as`(Long::class.java)
+
+        //Not allowed if not authenticated
+        RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(BookForSaleDto("new book by foo", id, 5))
+                .post("/api/v1/store-server/store")
+                .then()
+                .statusCode(403)
+
+        /**Users can perform PATCH and PUT for books that they are selling (such as editing
+         * the price), but cannot perform these actions for other users**/
+
+        RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .header("X-XSRF-TOKEN", cookies.csrf)
+                .cookie("XSRF-TOKEN", cookies.csrf)
+                .pathParam("id", bookForSaleId)
+                .pathParam("soldBy", member1.id)
+                .contentType("application/merge-patch+json")
+                .body("{\"name\":\"newName\"}")
+                .patch("/api/v1/store-server/store/{soldBy}/book/{id}")
+                .then()
+                .statusCode(204)
+
+        RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .header("X-XSRF-TOKEN", cookies.csrf)
+                .cookie("XSRF-TOKEN", cookies.csrf)
+                .pathParam("soldBy", id2)
+                .pathParam("id", bookForSaleId2)
+                .contentType("application/merge-patch+json")
+                .body("{\"name\":\"newName\"}")
+                .patch("/api/v1/store-server/store/{soldBy}/book/{id}")
+                .then()
+                .statusCode(403)
+
+        /**Users can perform DELETE for books that they've set for sale, but not for books
+         * that other users have posted**/
+
+        RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .header("X-XSRF-TOKEN", cookies.csrf)
+                .cookie("XSRF-TOKEN", cookies.csrf)
+                .pathParam("soldBy", id)
+                .pathParam("id", bookForSaleId)
+                .delete("/api/v1/store-server/store/{soldBy}/book/{id}")
+                .then()
+                .statusCode(204)
+
+        RestAssured.given()
+                .cookie("SESSION", cookies.session)
+                .header("X-XSRF-TOKEN", cookies.csrf)
+                .cookie("XSRF-TOKEN", cookies.csrf)
+                .pathParam("soldBy", id2)
+                .pathParam("id", bookForSaleId2)
+                .delete("/api/v1/store-server/store/{soldBy}/book/{id}")
+                .then()
+                .statusCode(403)
+
     }
 }
