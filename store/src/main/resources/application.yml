@@ -8,6 +8,8 @@ eureka:
 spring:
   application:
     name: store-server
+  session:
+    store-type: none
   datasource:
     url: "jdbc:h2:mem:"
     driver-class-name: "org.h2.Driver"
