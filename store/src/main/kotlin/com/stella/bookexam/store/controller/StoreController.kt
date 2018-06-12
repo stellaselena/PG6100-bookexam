@@ -10,6 +10,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.Authentication
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import javax.validation.ConstraintViolationException
@@ -74,6 +75,15 @@ class StoreController {
         }
     }
 
+    @ApiOperation("Fetch 10 last posted books for sale")
+    @ApiResponse(code = 200, message = "List of books for sale")
+    @GetMapping("/last")
+    fun getLast10BooksForSale(): ResponseEntity<List<BookForSaleDto>> {
+
+       return ResponseEntity.ok(BookForSaleConverter.transform(repo.getLast10PostedBooksForSale()) as List<BookForSaleDto>)
+
+    }
+
     @ApiOperation("Get a single book for sale specified by id")
     @ApiResponses(
             ApiResponse(code = 400, message = "Given path param is invalid, can not be parsed to long"),
@@ -89,45 +99,76 @@ class StoreController {
         return ResponseEntity.ok(BookForSaleConverter.transform(dto))
     }
 
+    @ApiOperation("Get all books sold by a member")
+    @ApiResponses(
+            ApiResponse(code = 400, message = "Given path param is invalid"),
+            ApiResponse(code = 404, message = "No books for sale by member found"),
+            ApiResponse(code = 200, message = "Return books for sale posted by member")
+    )
+    @GetMapping(path = arrayOf("{soldBy}/books"))
+    fun getBooksForSaleByMember(
+            @ApiParam("soldBy")
+            @PathVariable("soldBy") memberId: String
+    ):  ResponseEntity<List<BookForSaleDto>>  {
+        if(repo.findAllBySoldBy(memberId).count() > 0){
+            return ResponseEntity.ok(BookForSaleConverter.transform(repo.findAllBySoldBy(memberId)) as List<BookForSaleDto>)
+
+        } else {
+            return ResponseEntity.status(404).build()
+        }
+
+    }
+
     @ApiOperation("Delete a book for sale entity with the given id")
     @ApiResponses(
             ApiResponse(code = 400, message = "Given path param is invalid, can not be parsed to long"),
             ApiResponse(code = 404, message = "Book for sale with given id not found"),
             ApiResponse(code = 204, message = "Book for sale with given id was deleted")
     )
-    @DeleteMapping(path = arrayOf("/{id}"))
-    fun deleteBookForSale(
+    @DeleteMapping(path = arrayOf("/{soldBy}/book/{id}"))
+    fun deleteBookForSale(authentication: Authentication,
             @ApiParam("Id")
             @PathVariable("id")
-            pathId: Long
+            pathId: Long,
+            @PathVariable("soldBy")
+            soldBy: String?
     ): ResponseEntity<Any> {
 
         if (!repo.exists(pathId)) {
             return ResponseEntity.status(404).build()
+        }
+        val dto = repo.findOne(pathId) ?: return ResponseEntity.status(404).build()
+        if(dto.soldBy != authentication.name){
+            return ResponseEntity.status(403).build()
         }
         repo.delete(pathId)
         return ResponseEntity.status(204).build()
     }
 
     @ApiOperation("Modify the book for sale using JSON Merge Patch")
-    @PatchMapping(path = arrayOf("/{id}"),
+    @PatchMapping(path = arrayOf("/{soldBy}/book/{id}"),
             consumes = arrayOf("application/merge-patch+json"))
-    fun mergePatchMember(@ApiParam("Id of the book for sale")
-                         @PathVariable("id")
-                         id: String?,
-                         @ApiParam("The partial patch")
-                         @RequestBody
-                         jsonPatch: String)
+    fun mergePatchStore(authentication: Authentication,
+                        @ApiParam("Id of the book for sale")
+                        @PathVariable("id")
+                        id: String?,
+                        @PathVariable("soldBy")
+                        soldBy: String?,
+                        @ApiParam("The partial patch")
+                        @RequestBody
+                        jsonPatch: String)
             : ResponseEntity<Void> {
 
-        val pathId : Long
-        try{
+        val pathId: Long
+        try {
             pathId = id!!.toLong()
-        } catch (e: Exception){
+        } catch (e: Exception) {
             return ResponseEntity.status(400).build()
         }
         val dto = repo.findOne(pathId) ?: return ResponseEntity.status(404).build()
-
+        if(dto.soldBy != authentication.name){
+            return ResponseEntity.status(403).build()
+        }
         val jackson = ObjectMapper()
 
         val jsonNode: JsonNode
@@ -157,15 +198,9 @@ class StoreController {
             }
         }
 
+        //soldBy must not be changed
         if (jsonNode.has("soldBy")) {
-            val soldByNode = jsonNode.get("soldBy")
-            if (soldByNode.isNull) {
-                newSoldBy = dto.soldBy
-            } else if (soldByNode.isTextual) {
-                newSoldBy = soldByNode.asText()
-            } else {
-                return ResponseEntity.status(400).build()
-            }
+            newSoldBy = dto.soldBy
         }
 
         if (jsonNode.has("price")) {

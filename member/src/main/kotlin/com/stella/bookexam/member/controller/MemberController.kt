@@ -337,7 +337,7 @@ class MemberController {
 
         }
 
-        if (bookForSaleDto.price!! <= 0 || bookForSaleDto.soldBy != member.username || bookForSaleDto.name.isNullOrBlank()) {
+        if (bookForSaleDto.price!! <= 0 || bookForSaleDto.soldBy != member.id || bookForSaleDto.name.isNullOrBlank()) {
             return ResponseEntity.status(400).build()
         }
 

@@ -4,6 +4,7 @@ import com.stella.bookexam.store.domain.model.BookForSale
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import java.time.ZonedDateTime
 import javax.persistence.EntityManager
 import javax.persistence.PersistenceContext
 
@@ -25,6 +26,7 @@ interface StoreRepositoryCustom {
             soldBy: String,
             price: Int,
             id: Long) : Boolean
+    fun getLast10PostedBooksForSale() : Iterable<BookForSale>
 
 }
 
@@ -43,7 +45,9 @@ open class StoreRepositoryImpl : StoreRepositoryCustom {
                 name,
                 soldBy,
                 price,
-                null
+                null,
+                ZonedDateTime.now()
+
         )
         em.persist(entity)
 
@@ -70,6 +74,11 @@ open class StoreRepositoryImpl : StoreRepositoryCustom {
         entity.price = price
 
         return true
+    }
+
+    override fun getLast10PostedBooksForSale() : Iterable<BookForSale>{
+        val query = em .createQuery("select b from BookForSale b order by b.createdOn DESC", BookForSale::class.java)
+        return query.setMaxResults(10).resultList.toList()
     }
 
 

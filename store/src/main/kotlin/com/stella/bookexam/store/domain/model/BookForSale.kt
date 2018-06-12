@@ -1,6 +1,7 @@
 package com.stella.bookexam.store.domain.model
 
 import org.hibernate.validator.constraints.NotBlank
+import java.time.ZonedDateTime
 import javax.persistence.Entity
 import javax.persistence.GeneratedValue
 import javax.persistence.Id
@@ -16,5 +17,7 @@ data class BookForSale(
         @get:NotNull
         var price: Int,
         @get:Id @get:GeneratedValue
-        var id: Long? = null
+        var id: Long? = null,
+        var createdOn: ZonedDateTime? = null
+
 )

@@ -3,6 +3,7 @@ package com.stella.bookexam.schema
 import io.swagger.annotations.ApiModel
 import io.swagger.annotations.ApiModelProperty
 import java.io.Serializable
+import java.time.ZonedDateTime
 
 @ApiModel("DTO for books that are set for sale")
 data class BookForSaleDto(
@@ -17,6 +18,9 @@ data class BookForSaleDto(
         var price: Int?=null,
 
         @ApiModelProperty("Id of the book that a user is selling")
-        var id: String?=null
+        var id: String?=null,
+
+        @ApiModelProperty("When the book was posted for sale")
+        var createdOn: ZonedDateTime? = null
 
 ) : Serializable

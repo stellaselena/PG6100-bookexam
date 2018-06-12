@@ -10,7 +10,8 @@ class BookForSaleConverter {
                     id = entity.id?.toString(),
                     name = entity.name,
                     soldBy = entity.soldBy,
-                    price = entity.price
+                    price = entity.price,
+                    createdOn = entity.createdOn
 
             )
         }
