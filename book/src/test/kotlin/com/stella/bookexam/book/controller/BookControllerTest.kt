@@ -287,12 +287,14 @@ class BookControllerTest : TestBase() {
                 .then()
                 .statusCode(204)
 
-        RestAssured.given()
+        val a = RestAssured.given()
                 .pathParam("id", savedId)
                 .get("/{id}")
                 .then()
                 .statusCode(200)
                 .body("price", CoreMatchers.equalTo(30))
+                .extract()
+                .`as`(BookDto::class.java)
 
     }
 

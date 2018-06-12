@@ -246,7 +246,7 @@ class BookController {
         return ResponseEntity.ok().build()
     }
 
-    /**Even though merge patch should allow to set fields to null, we cannot do this here since all book fields are mandatory**/
+
     @ApiOperation("Modify the book using JSON Merge Patch")
     @PatchMapping(path = arrayOf("/{id}"),
             consumes = arrayOf("application/merge-patch+json"))
@@ -276,9 +276,11 @@ class BookController {
         var newName = dto.name
         var newDescription = dto.description
         var newGenre = dto.genre
+        var newAuthor = dto.author
         var newPrice = dto.price
         var newRating = dto.rating
 
+        //if a field is mandatory, we will keep the old value
         if (jsonNode.has("name")) {
             val nameNode = jsonNode.get("name")
             if (nameNode.isNull) {
@@ -295,9 +297,22 @@ class BookController {
             val descNode = jsonNode.get("description")
 
             if (descNode.isNull) {
-                newDescription = dto.description
+                newDescription = null
             } else if (descNode.isTextual) {
                 newDescription = descNode.asText()
+            } else {
+                return ResponseEntity.status(400).build()
+            }
+        }
+
+        if (jsonNode.has("author")) {
+
+            val authorNode = jsonNode.get("author")
+
+            if (authorNode.isNull) {
+                newAuthor = null
+            } else if (authorNode.isTextual) {
+                newAuthor = authorNode.asText()
             } else {
                 return ResponseEntity.status(400).build()
             }
@@ -308,7 +323,7 @@ class BookController {
             val genreNode = jsonNode.get("genre")
 
             if (genreNode.isNull) {
-                newGenre = dto.genre
+                newGenre = null
             } else if (genreNode.isTextual) {
                 newGenre = genreNode.asText()
             } else {
@@ -321,7 +336,7 @@ class BookController {
             val priceNode = jsonNode.get("price")
 
             if (priceNode.isNull) {
-                newPrice = dto.price
+                newPrice = null
             } else if (priceNode.isNumber) {
                 newPrice = priceNode.intValue()
             } else {
@@ -334,7 +349,7 @@ class BookController {
             val ratingNode = jsonNode.get("rating")
 
             if (ratingNode.isNull) {
-                newRating = dto.rating
+                newRating = null
             } else if (ratingNode.isNumber) {
                 newRating = ratingNode.intValue()
             } else {
@@ -345,6 +360,7 @@ class BookController {
         //now that the input is validated, do the update
         dto.name = newName
         dto.description = newDescription
+        dto.author = newAuthor
         dto.genre = newGenre
         dto.price = newPrice
         dto.rating = newRating
@@ -352,11 +368,11 @@ class BookController {
         try {
             val successful = repo.updateBook(
                     dto.name,
-                    dto.description!!,
-                    dto.genre!!,
-                    dto.author!!,
-                    dto.price!!,
-                    dto.rating!!,
+                    dto.description,
+                    dto.genre,
+                    dto.author,
+                    dto.price,
+                    dto.rating,
                     dto.id!!.toLong()
             )
             if (!successful) {

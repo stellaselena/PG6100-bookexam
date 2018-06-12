@@ -1,5 +1,7 @@
 package com.stella.bookexam.store.controller
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.stella.bookexam.schema.BookForSaleDto
 import com.stella.bookexam.store.domain.converter.BookForSaleConverter
 import com.stella.bookexam.store.repository.StoreRepository
@@ -105,6 +107,98 @@ class StoreController {
         }
         repo.delete(pathId)
         return ResponseEntity.status(204).build()
+    }
+
+    @ApiOperation("Modify the book for sale using JSON Merge Patch")
+    @PatchMapping(path = arrayOf("/{id}"),
+            consumes = arrayOf("application/merge-patch+json"))
+    fun mergePatchMember(@ApiParam("Id of the book for sale")
+                         @PathVariable("id")
+                         id: String?,
+                         @ApiParam("The partial patch")
+                         @RequestBody
+                         jsonPatch: String)
+            : ResponseEntity<Void> {
+
+        val pathId : Long
+        try{
+            pathId = id!!.toLong()
+        } catch (e: Exception){
+            return ResponseEntity.status(400).build()
+        }
+        val dto = repo.findOne(pathId) ?: return ResponseEntity.status(404).build()
+
+        val jackson = ObjectMapper()
+
+        val jsonNode: JsonNode
+        try {
+            jsonNode = jackson.readValue(jsonPatch, JsonNode::class.java)
+        } catch (e: Exception) {
+            return ResponseEntity.status(400).build()
+        }
+
+        if (jsonNode.has("id")) {
+            return ResponseEntity.status(409).build()
+        }
+
+        var newName = dto.name
+        var newSoldBy = dto.soldBy
+        var newPrice = dto.price
+
+        //in this case all fields are mandatory, if set to null we will keep the old value
+        if (jsonNode.has("name")) {
+            val nameNode = jsonNode.get("name")
+            if (nameNode.isNull) {
+                newName = dto.name
+            } else if (nameNode.isTextual) {
+                newName = nameNode.asText()
+            } else {
+                return ResponseEntity.status(400).build()
+            }
+        }
+
+        if (jsonNode.has("soldBy")) {
+            val soldByNode = jsonNode.get("soldBy")
+            if (soldByNode.isNull) {
+                newSoldBy = dto.soldBy
+            } else if (soldByNode.isTextual) {
+                newSoldBy = soldByNode.asText()
+            } else {
+                return ResponseEntity.status(400).build()
+            }
+        }
+
+        if (jsonNode.has("price")) {
+            val priceNode = jsonNode.get("price")
+            if (priceNode == null) {
+                newPrice = dto.price
+            } else if (priceNode.isNumber) {
+                newPrice = priceNode.asInt()
+            } else {
+                return ResponseEntity.status(400).build()
+            }
+        }
+
+        //now that the input is validated, do the update
+        dto.name = newName
+        dto.soldBy = newSoldBy
+        dto.price = newPrice
+
+        try {
+            val successful = repo.update(
+                    dto.name,
+                    dto.soldBy,
+                    dto.price,
+                    dto.id!!.toLong()
+            )
+            if (!successful) {
+                return ResponseEntity.status(400).build()
+            }
+            return ResponseEntity.status(204).build()
+        } catch (e: ConstraintViolationException) {
+            return ResponseEntity.status(400).build()
+        }
+
     }
 
     fun registerBookForSale(bookForSaleDto: BookForSaleDto): Long {

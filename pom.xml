@@ -17,6 +17,7 @@
         <module>member</module>
         <module>gateway</module>
         <module>store</module>
+        <module>e2e</module>
     </modules>
 
     <properties>

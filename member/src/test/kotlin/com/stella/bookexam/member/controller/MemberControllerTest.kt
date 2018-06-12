@@ -228,7 +228,30 @@ class MemberControllerTest : WiremockTestBase() {
                 .then()
                 .statusCode(201)
 
+        //mock the book that we're looking for
+        wireMockServerBook.stubFor(
+                WireMock.get(WireMock.urlMatching(".*/books/name/bookforsale"))
+                        .willReturn(
+                                WireMock.aResponse()
+                                        .withStatus(200)))
 
+        wireMockServerBook.stubFor(
+                WireMock.post(WireMock.urlMatching(".*/books/store"))
+                        .willReturn(
+                                WireMock.aResponse()
+                                        .withStatus(200)))
+
+        //first add a book that a member is selling
+        RestAssured.given()
+                .auth().basic("foo", "123")
+                .pathParam("id", memberDto1.id)
+                .contentType(ContentType.JSON)
+                .body(BookForSaleDto("bookforsale", memberDto1.username, 30))
+                .post("/{id}/books")
+                .then()
+                .statusCode(200)
+
+        //now merge
         RestAssured.given().auth().basic("foo", "123")
                 .pathParam("id", memberDto1.id)
                 .contentType("application/merge-patch+json")

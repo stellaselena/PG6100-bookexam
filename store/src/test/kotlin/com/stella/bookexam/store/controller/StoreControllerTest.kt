@@ -147,6 +147,32 @@ class StoreControllerTest : TestBase(){
                 .statusCode(404)
     }
 
+    /**Try to merge patch a book for sale**/
+    @Test
+    fun testUpdateBookForSale_MergePatch() {
+        val dto = getValidBookForSaleDto()
+        val id = postBookForSaleValid(dto)
+
+        //now merge
+        RestAssured.given().auth().basic("foo", "123")
+                .pathParam("id", id)
+                .auth().basic("admin", "admin")
+                .contentType("application/merge-patch+json")
+                .body("{\"name\":\"newName\", \"soldBy\":null}")
+                .patch("/{id}")
+                .then()
+                .statusCode(204)
+
+        RestAssured.given()
+                .pathParam("id", id)
+                .get("/{id}")
+                .then()
+                .statusCode(200)
+                .body("name", CoreMatchers.equalTo("newName"))
+                .body("soldBy", CoreMatchers.equalTo(dto.soldBy))
+
+    }
+
 
     fun getValidBookForSaleDto():BookForSaleDto {
 

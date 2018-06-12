@@ -28,11 +28,11 @@ interface BookRepositoryCustom {
 
     fun updateBook(
             name: String,
-            description: String,
-            genre: String,
-            author: String,
-            price: Int,
-            rating: Int,
+            description: String?,
+            genre: String?,
+            author: String?,
+            price: Int?,
+            rating: Int?,
             id: Long): Boolean
 
     fun updatePrice(price: Int, id: Long): Boolean
@@ -74,16 +74,21 @@ open class BookRepositoryImpl : BookRepositoryCustom {
 
     override fun updateBook(
             name: String,
-            description: String,
-            genre: String,
-            author: String,
-            price: Int,
-            rating: Int,
+            description: String?,
+            genre: String?,
+            author: String?,
+            price: Int?,
+            rating: Int?,
             id: Long): Boolean {
         val book = em.find(Book::class.java, id) ?: return false
 
-        if (name.isNullOrEmpty() || description.isNullOrBlank() || genre.isNullOrBlank()
-                || author.isNullOrBlank() || rating == null || price == null) {
+        if (name.isNullOrEmpty()) {
+            return false
+        }
+        if(price != null && price < 1){
+            return false
+        }
+        if(rating != null && rating < 1){
             return false
         }
 

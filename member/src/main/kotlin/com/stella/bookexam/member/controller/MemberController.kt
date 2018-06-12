@@ -231,7 +231,7 @@ class MemberController {
         var newUsername = dto.username
         var newBooks = dto.books
 
-
+        //if null, we will keep the old value for mandatory fields
         if (jsonNode.has("username")) {
             val usernameNode = jsonNode.get("username")
             if (usernameNode.isNull) {
@@ -248,7 +248,7 @@ class MemberController {
             val booksNode = jsonNode.get("books")
 
             if (booksNode.isNull) {
-                newBooks = dto.books
+                newBooks = mutableMapOf()
             } else if (booksNode != null) {
                 val temp = dto.books
                 val map = jackson.convertValue(booksNode, MutableMap::class.java)
