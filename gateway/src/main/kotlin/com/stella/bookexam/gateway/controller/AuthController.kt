@@ -75,7 +75,7 @@ class AuthController(
         else {
             try {
                 val memberDto = MemberDto(
-                        username = "member-$username",
+                        username = username,
                         books = mutableMapOf(),
                         id = username
                 )
