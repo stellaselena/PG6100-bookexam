@@ -16,7 +16,8 @@ class StoreControllerTest : TestBase(){
                 .body("size()", CoreMatchers.equalTo(0))
     }
 
-    /**Create a book for sale**/
+    /**Create a book for sale. Create method is here for testing purposes only,
+     * as we're creating books for sale via amqp otherwise**/
     @Test
     fun testCreateBookForSale() {
         var dto = getValidBookForSaleDto()

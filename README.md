@@ -1,10 +1,24 @@
 # PG6100 Bookstore exam
 ### Repository
-[Link to repository](https://github.com/stellaselena/PG6100-bookexam)  
+[Link to repository](https://github.com/stellaselena/PG6100-bookexam)
+
+### Documentation for APIs (SWAGGER)
+- Manual start: 
+It is possible to manually start endpoints by running them directly from IDE. In this case all endpoints
+will have different ports, which are configured inside application.yml for each API.
+Swagger documentation will then be available from `localhost:${port}/swagger-ui.html`. Ports: Member: `8081`, Book: `8082`, Store: `8083`
+
+- Via docker-compose:
+Swagger documentation will be available from localhost:10000/api/v1/${module_name}/swagger-ui.html for authenticated users.
+To authenticate, use Postman to create credentials, and use them in browser.
 
 ### Postman
-POSTMAN collection to import: [https://www.getpostman.com/collections/b4e7f0ff91abcadf453f](https://www.getpostman.com/collections/b4e7f0ff91abcadf453f)  
+[POSTMAN collection to import](https://www.getpostman.com/collections/b4e7f0ff91abcadf453f)  
+
+[Postman documentation](https://documenter.getpostman.com/view/3958637/RWEdsfiZ)
+
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/b4e7f0ff91abcadf453f)
+
 
 ### Travis
 [![Build Status](https://travis-ci.com/stellaselena/PG6100-bookexam.svg?token=xqfmXCaJoqxaqpsVZGP3&branch=master)](https://travis-ci.com/stellaselena/PG6100-bookexam)
@@ -32,21 +46,17 @@ Registered members can view books owned by the library.
 #### Students (Member module)
 When a user is registered, a member profile is created for the given user. This is done using AMQP (RabbitMQ).
 
-If a member owns his/her own copy of the book they are able to do so in two ways:
-
-1. If a member wishes to sell a book via university library, only if the library has the book 
+If a member wishes to sell a book via university library, only if the library has the book 
 listed can a member can specify that he has a copy of the given book.
 After notifying the library, the copy of the book with the price specified by the member will be posted to the book store
-where students can sell their copies.
-
-2. If they want to put a book for sale that the university library doesn't own, they can do so directly from the store.
+where students sell their books.
 
 ##### Security:
 Registered members can modify their profile information and the books that they wish to sell, but they cannot
 modify info of other members or specify books that they are selling.
 
 #### Bookstore (Store module)
-From the bookstore, members (students) can see all books that are posted for sale by other students.
+From the bookstore, members can see all books that are posted for sale by other students.
 A member can filter the books by their name, by the name of the seller or by their price.
 Books can also be filtered by the last 10 events in which a member registers the fact that he wants to sell a book.
 Book module communicates with store module using AMQP (RabbitMq). Store module subscribes to the queue containing
@@ -102,15 +112,15 @@ Spring framework, in addition to some other libraries is used for testing and pr
 It will take a couple of minutes to start up all the services, partly because of all the containers that are started and
 partly because eureka takes some time to get all instances registered. 
 
-### Documentation for APIs (SWAGGER)
-- Manual start: 
-It is possible to manually start endpoints by running them directly from IDE. In this case all endpoints
-will have different ports, which are configured inside application.yml for each API.
-Swagger documentation will then be available from `localhost:${port}/swagger-ui.html`. Ports: Member API: `8081`, Book API: `8082`, Store API: `8083`
-
-- Via docker-compose:
-Swagger documentation will be available from localhost:10000/api/v1/${module_name}/swagger-ui.html for authenticated users.
-To authenticate, use Postman to create credentials, and use them in browser.
+## Extra features
+In addition to the requirements for the exam, some extra features are implemented, such as:
+- 2 AMQP communications (In addition to one required where a store module subscribes to the queue containing new books that a user wants to sell):
+    - When a user is registered, a member profile is created for the given user. This is done using AMQP (RabbitMQ)
+- Added Hystrix to Members to handle book service downtime
+- All 3 APIS that have at least one POST, PUT, PATCH (regular & Json merge) and DELETE method and at least one local and E2E test for each endpoint.
+All APIs are protected by Spring Security, where Redis used as a shared storage for authentication data.
+- Some smaller features such as filtering after certain book prices, member names, or books names.
+- For more details, refer to the comments for local & E2E tests and postman or swagger documentation.
 
 ## Docker
 If problems such as nodes crashing arise, keep in mind that it is important to increase the memory Docker is allowed to use.
@@ -119,21 +129,5 @@ To remove all images: `docker rmi $(docker images -a -q)`
 ## Eureka
 To view Eurekas dashboard and services registered, uncomment Eureka's port in docker-compose.yml, dashboard will be accessible from `localhost:8761`
 
-## Extra features
-In addition to the requirements for the exam, some extra features are implemented, such as:
-- 2 AMQP communications (In addition to one required where a store module subscribes to the queue containing new books that a user wants to sell):
-    - When a user is registered, a member profile is created for the given user. This is done using AMQP (RabbitMQ)
-- Added Hystrix to Members to handle book service downtime
-- Added a third REST API - Store:
-    - All endpoints provide POST, PUT, PATCH, GET and DELETE methods.
-    - At least one local and E2E test for each endpoint.
-    - Protected by Spring Security, Redis used as a shared storage for authentication data.
-    - **Some of Store's features**:
-        - Get all books that students have posted for sale. 
-        - Get last 10 books that were posted for sale.
-        - If member wishes to sell the book via library, he first needs to verify that the library has that book, then he can notify the
-         library that he is offering to sell a copy of the book for a certain price. If a member chooses to post directly to store,
-          he doesn't have to constraint himself to library's existing books.
-- Besides the requirement to have one main REST API with CRUD abilities, there are two additional APIS that have at least 
-one POST, PUT, PATCH (Json merge patch),and some other features such as filtering after certain book prices, member names, or books.
-- For more details, refer to the comments for local & E2E tests.
+
+   
