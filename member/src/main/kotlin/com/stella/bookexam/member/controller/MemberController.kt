@@ -373,7 +373,6 @@ class MemberController {
                 val bookUrl = "${bookHost}/books/name/$name"
                 rest.getForEntity(bookUrl, BookDto::class.java)
             } catch (e: HttpClientErrorException) {
-
                 return ResponseEntity.status(404).build()
             }
 
@@ -399,7 +398,6 @@ class MemberController {
                 val bookUrl = "${bookHost}/books/store"
                 rest.exchange(bookUrl, HttpMethod.POST, entity, Void::class.java)
             } catch (e: HttpClientErrorException) {
-
                 return 404
             }
 

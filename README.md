@@ -69,7 +69,7 @@ Registered members can modify the information of the books that they have posted
 Up time depends on hardware (in my case it takes around 1-2 minutes)
 
 ## How to test the application
-1. Run `mvn clean install` (add -DskipTests if you do not want to run tests)
+1. Run `mvn clean install` (add `-DskipTests` if you do not want to run tests)
 2. Run `docker-compose build`
 3. Run `docker-compose up`
 3. Use the above provided Postman collection to manually test the endpoints.
@@ -120,4 +120,21 @@ To remove all images: `docker rmi $(docker images -a -q)`
 ## Eureka
 To view Eurekas dashboard and services registered, uncomment Eureka's port in docker-compose.yml, dashboard will be accessible from `localhost:8761`
 
-## Extra features/ Difficulties
+## Extra features
+In addition to the requirements for the exam, some extra features are implemented, such as:
+- 2 AMQP communications (In addition to one required where a store module subscribes to the queue containing new books that a user wants to sell):
+    - When a user is registered, a member profile is created for the given user. This is done using AMQP (RabbitMQ)
+- Added Hystrix to Members to handle book service downtime
+- Added a third REST API - Store:
+    - All endpoints provide POST, PUT, PATCH, GET and DELETE methods.
+    - At least one local and E2E test for each endpoint.
+    - Protected by Spring Security, Redis used as a shared storage for authentication data.
+    - **Some of Store's features**:
+        - Get all books that students have posted for sale. 
+        - Get last 10 books that were posted for sale.
+        - If member wishes to sell the book via library, he first needs to verify that the library has that book, then he can notify the
+         library that he is offering to sell a copy of the book for a certain price. If a member chooses to post directly to store,
+          he doesn't have to constraint himself to library's existing books.
+- Besides the requirement to have one main REST API with CRUD abilities, there are two additional APIS that have at least 
+one POST, PUT, PATCH (Json merge patch),and some other features such as filtering after certain book prices, member names, or books.
+- For more details, refer to the comments for local & E2E tests.

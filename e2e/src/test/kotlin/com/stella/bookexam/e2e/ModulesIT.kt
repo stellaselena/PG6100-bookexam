@@ -133,6 +133,19 @@ class ModulesIT {
                 .extract()
                 .`as`(Long::class.java)
 
+        //Post
+        val bookId2 = RestAssured.given()
+                .cookie("SESSION", cookies2.session)
+                .header("X-XSRF-TOKEN", cookies2.csrf)
+                .cookie("XSRF-TOKEN", cookies2.csrf)
+                .contentType(ContentType.JSON)
+                .body(book2)
+                .post("/api/v1/book-server/books")
+                .then()
+                .statusCode(201)
+                .extract()
+                .`as`(Long::class.java)
+
         /**An user cannot perform PUT or PATCH requests to book-server**/
 
         //Json merge patch
@@ -198,17 +211,6 @@ class ModulesIT {
                 .extract()
                 .`as`(BookDto::class.java)
 
-        //Get a book by its name
-        RestAssured.given()
-                .cookie("SESSION", cookies2.session)
-                .header("X-XSRF-TOKEN", cookies2.csrf)
-                .cookie("XSRF-TOKEN", cookies2.csrf)
-                .pathParam("name", returnedBook.name)
-                .contentType(ContentType.JSON)
-                .get("/api/v1/book-server/books/name/{name}")
-                .then()
-                .statusCode(200)
-
         /**An user cannot perform DELETE requests to book-server**/
 
         RestAssured.given()
@@ -230,7 +232,7 @@ class ModulesIT {
                 .cookie("XSRF-TOKEN", cookies2.csrf)
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
-                .pathParam("id", bookId)
+                .pathParam("id", bookId2)
                 .delete("/api/v1/book-server/books/{id}")
                 .then()
                 .statusCode(204)
@@ -321,24 +323,24 @@ class ModulesIT {
          *  which then posts the book for sale
          *  **/
 
-        val bookForSaleDto = BookForSaleDto(name = returnedBook.name, soldBy = member1.username, price = 30)
+        val bookForSaleDto = BookForSaleDto(name = returnedBook.name, soldBy = member1.username, price = 20)
 
-//        Add a book that a member is selling
-//        Awaitility.await().atMost(300, TimeUnit.SECONDS)
-//                .ignoreExceptions()
-//                .until({
-//                    RestAssured.given()
-//                            .cookie("SESSION", cookies.session)
-//                            .header("X-XSRF-TOKEN", cookies.csrf)
-//                            .cookie("XSRF-TOKEN", cookies.csrf)
-//                            .pathParam("id", member1.id)
-//                            .contentType(ContentType.JSON)
-//                            .body(bookForSaleDto)
-//                            .post("/api/v1/member-server/members/{id}/books")
-//                            .then()
-//                            .statusCode(200)
-//                    true
-//                })
+        //Add a book that a member is selling
+        Awaitility.await().atMost(240, TimeUnit.SECONDS)
+                .ignoreExceptions()
+                .until({
+                    RestAssured.given()
+                            .cookie("SESSION", cookies.session)
+                            .header("X-XSRF-TOKEN", cookies.csrf)
+                            .cookie("XSRF-TOKEN", cookies.csrf)
+                            .pathParam("id", member1.id)
+                            .contentType(ContentType.JSON)
+                            .body(bookForSaleDto)
+                            .post("/api/v1/member-server/members/{id}/books")
+                            .then()
+                            .statusCode(200)
+                    true
+                })
 
         //Try to do the same for another user
         RestAssured.given()

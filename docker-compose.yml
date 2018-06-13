@@ -33,7 +33,7 @@ services:
       - eureka
       - rabbitmq
       - redis
-#      - book-server
+      - book-server
 
   book-server:
     build:
