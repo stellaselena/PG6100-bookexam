@@ -1,5 +1,6 @@
 # PG6100 Bookstore exam
-[Repository](https://github.com/NikitaZhevnitskiy/ern-card-game)  
+### Repository
+[Link to repository](https://github.com/stellaselena/PG6100-bookexam)  
 
 ### Postman
 POSTMAN collection to import: [https://www.getpostman.com/collections/b4e7f0ff91abcadf453f](https://www.getpostman.com/collections/b4e7f0ff91abcadf453f)  
@@ -7,6 +8,7 @@ POSTMAN collection to import: [https://www.getpostman.com/collections/b4e7f0ff91
 
 ### Travis
 [![Build Status](https://travis-ci.com/stellaselena/PG6100-bookexam.svg?token=xqfmXCaJoqxaqpsVZGP3&branch=master)](https://travis-ci.com/stellaselena/PG6100-bookexam)
+
 
 ## About the application:
 The topic of the application is trading of used books in an university.
@@ -18,14 +20,14 @@ PUT, POST and PATCH methods that are routed through Zuul are secured from XSRF a
 Each module is protected by Spring Security, where Redis is used as a shared storage for authentication data.
 
 #### University library (Book module)
-Those who work in the library have access to upload new books, edit or delete existing books. 
+Those who work in the library (assuming that they have ADMIN role) have access to upload new books, edit or delete existing books. 
 
-After registering, members are able to browse the books that the university library owns, where they can
+After registering, members (students of the university) are able to browse the books that the university library owns, where they can
 view description, genre, author, and the retail price of the books.
 
 ##### Security:
 Only a library admin is able to create and modify books.
-Registered members (students) can view books owned by the library.
+Registered members can view books owned by the library.
 
 #### Students (Member module)
 When a user is registered, a member profile is created for the given user. This is done using AMQP (RabbitMQ).
@@ -73,10 +75,8 @@ Up time depends on hardware (in my case it takes around 1-2 minutes)
 3. Use the above provided Postman collection to manually test the endpoints.
 4. To run integration tests: `mvn clean install -DskipIntegrationTests=false` (disabled by default)
 
-
 ### How is the application implemented and technologies used
 ![Diagram](./diagram.png)  
-
 
 - Gateway uses Zuul for load balancing and proxying. THe gateway stores user credentials and is used for authentication, via Redis.
 - Redis is used to store distributed session.  
@@ -120,7 +120,4 @@ To remove all images: `docker rmi $(docker images -a -q)`
 ## Eureka
 To view Eurekas dashboard and services registered, uncomment Eureka's port in docker-compose.yml, dashboard will be accessible from `localhost:8761`
 
-## Extra features
-
-## Difficulties
-
+## Extra features/ Difficulties
