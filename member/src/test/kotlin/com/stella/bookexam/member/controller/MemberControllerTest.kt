@@ -385,7 +385,7 @@ class MemberControllerTest : WiremockTestBase() {
 
 
         wireMockServerBook.stubFor(
-                WireMock.get(WireMock.urlMatching(".*/books/name/bookforsale"))
+                WireMock.get(WireMock.urlMatching(".*/books/name/nonexistingbook"))
                         .willReturn(
                                 WireMock.aResponse()
                                         .withStatus(404)))
@@ -394,7 +394,7 @@ class MemberControllerTest : WiremockTestBase() {
                 .auth().basic("foo", "123")
                 .pathParam("id", memberDto1.id)
                 .contentType(ContentType.JSON)
-                .body(BookForSaleDto("bookforsale", memberDto1.id, 30))
+                .body(BookForSaleDto("nonexistingbook", memberDto1.id, 30))
                 .post("/{id}/books")
                 .then()
                 .statusCode(400)
