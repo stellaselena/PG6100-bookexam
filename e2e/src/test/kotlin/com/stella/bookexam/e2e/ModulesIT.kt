@@ -198,6 +198,17 @@ class ModulesIT {
                 .extract()
                 .`as`(BookDto::class.java)
 
+        //Get a book by its name
+        RestAssured.given()
+                .cookie("SESSION", cookies2.session)
+                .header("X-XSRF-TOKEN", cookies2.csrf)
+                .cookie("XSRF-TOKEN", cookies2.csrf)
+                .pathParam("name", returnedBook.name)
+                .contentType(ContentType.JSON)
+                .get("/api/v1/book-server/books/name/{name}")
+                .then()
+                .statusCode(200)
+
         /**An user cannot perform DELETE requests to book-server**/
 
         RestAssured.given()
@@ -312,17 +323,22 @@ class ModulesIT {
 
         val bookForSaleDto = BookForSaleDto(name = returnedBook.name, soldBy = member1.username, price = 30)
 
-        //Add a book that a member is selling
-//        RestAssured.given()
-//                .cookie("SESSION", cookies.session)
-//                .header("X-XSRF-TOKEN", cookies.csrf)
-//                .cookie("XSRF-TOKEN", cookies.csrf)
-//                .pathParam("id", member1.id)
-//                .contentType("APPLICATION_JSON_UTF8_VALUE")
-//                .body(bookForSale)
-//                .post("/api/v1/member-server/members/{id}/books")
-//                .then()
-//                .statusCode(200)
+//        Add a book that a member is selling
+        Awaitility.await().atMost(200, TimeUnit.SECONDS)
+                .ignoreExceptions()
+                .until({
+                    RestAssured.given()
+                            .cookie("SESSION", cookies.session)
+                            .header("X-XSRF-TOKEN", cookies.csrf)
+                            .cookie("XSRF-TOKEN", cookies.csrf)
+                            .pathParam("id", member1.id)
+                            .contentType(ContentType.JSON)
+                            .body(bookForSaleDto)
+                            .post("/api/v1/member-server/members/{id}/books")
+                            .then()
+                            .statusCode(200)
+                    true
+                })
 
         //Try to do the same for another user
         RestAssured.given()

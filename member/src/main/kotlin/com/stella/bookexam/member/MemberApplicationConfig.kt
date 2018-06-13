@@ -30,8 +30,8 @@ class MemberApplicationConfig {
 
     init {
         val conf = ConfigurationManager.getConfigInstance()
-        conf.setProperty("hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds", 1000)
-        conf.setProperty("hystrix.command.default.circuitBreaker.requestVolumeThreshold", 20)
+        conf.setProperty("hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds", 5000)
+        conf.setProperty("hystrix.command.default.circuitBreaker.requestVolumeThreshold", 30)
         conf.setProperty("hystrix.command.default.circuitBreaker.errorThresholdPercentage", 50)
         conf.setProperty("hystrix.command.default.circuitBreaker.sleepWindowInMilliseconds", 5000)
     }

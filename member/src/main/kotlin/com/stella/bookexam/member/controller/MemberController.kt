@@ -317,7 +317,7 @@ class MemberController {
     @PostMapping(path = arrayOf("/{id}/books"), consumes = arrayOf(MediaType.APPLICATION_JSON_UTF8_VALUE))
     @ApiResponses(
             ApiResponse(code = 200, message = "Book was successfully added to Member"),
-            ApiResponse(code = 405, message = "Something is wrong with the book body"),
+            ApiResponse(code = 400, message = "Something is wrong with the book body"),
             ApiResponse(code = 404, message = "Could not find member or book with specified id")
     )
     fun addBookToMember(@PathVariable("id")
@@ -329,7 +329,6 @@ class MemberController {
             return ResponseEntity.status(404).build()
         }
 
-
         val member = repo.findOne(id)
 
         if(member.books.containsKey(bookForSaleDto.name)){
@@ -337,26 +336,44 @@ class MemberController {
 
         }
 
-
         if (bookForSaleDto.price!! <= 0 || bookForSaleDto.soldBy != member.id || bookForSaleDto.name.isNullOrBlank()) {
             return ResponseEntity.status(400).build()
         }
 
 
-        val response = GetBookByName(bookForSaleDto.name!!).execute()
-        if (response.statusCodeValue != 200) {
-            return ResponseEntity.status(400).build()
-        }
+//        val response = GetBookByName(bookForSaleDto.name!!).execute()
+//        if (response.statusCodeValue != 200) {
+//            return ResponseEntity.status(400).build()
+//        }
 
-
-
-        val postedBookForSale = PostBookForSale(bookForSaleDto).execute()
-        if (postedBookForSale != 200) {
-
-            return ResponseEntity.status(400).build()
+        try {
+            val bookUrl = "${bookHost}/books/name/${bookForSaleDto.name}"
+            rest.getForEntity(bookUrl, BookDto::class.java)
+        } catch (e: HttpClientErrorException) {
 
         }
 
+        println("posting book hystrix*************************************************************************'")
+
+
+//        val postedBookForSale = PostBookForSale(bookForSaleDto).execute()
+//        if (postedBookForSale != 200) {
+//            println("fail posting book hystrix*************************************************************************'")
+//
+//            return ResponseEntity.status(400).build()
+//
+//        }
+        var headers = HttpHeaders()
+        headers.contentType = MediaType.APPLICATION_JSON_UTF8
+
+        val entity = HttpEntity<BookForSaleDto>(
+                bookForSaleDto, headers)
+        try {
+            val bookUrl = "${bookHost}/books/store"
+            rest.exchange(bookUrl, HttpMethod.POST, entity, Void::class.java)
+        } catch (e: HttpClientErrorException) {
+
+        }
 
         if (repo.addBook(id, bookForSaleDto.name!!, bookForSaleDto.price!!.toInt())) {
 
@@ -370,51 +387,58 @@ class MemberController {
     }
 
 
-    private inner class GetBookByName(private val name: String)
-        : HystrixCommand<ResponseEntity<BookDto>>(HystrixCommandGroupKey.Factory.asKey("Call get book")) {
+//    private inner class GetBookByName(private val name: String)
+//        : HystrixCommand<ResponseEntity<BookDto>>(HystrixCommandGroupKey.Factory.asKey("Call get book")) {
+//
+//        override fun run(): ResponseEntity<BookDto> {
+//println("entered hystrix get book**************************")
+//            val response: ResponseEntity<BookDto> = try {
+//                val bookUrl = "${bookHost}/books/name/$name"
+//                rest.getForEntity(bookUrl, BookDto::class.java)
+//            } catch (e: HttpClientErrorException) {
+//                println("message" +  e.message)
+//                println("printStackTrace" + e.printStackTrace())
+//                println("stackTrace" + e.stackTrace)
+//                println("responseBodyAsString" + e.responseBodyAsString)
+//                println("rootCause" +e.rootCause)
+//                println("cause" +e.cause)
+//
+//                return ResponseEntity.status(404).build()
+//            }
+//
+//            return response
+//        }
+//
+//        override fun getFallback(): ResponseEntity<BookDto> {
+//            return ResponseEntity(HttpStatus.NOT_FOUND)
+//        }
+//    }
 
-        override fun run(): ResponseEntity<BookDto> {
-
-            val response: ResponseEntity<BookDto> = try {
-                val bookUrl = "${bookHost}/books/name/$name"
-                rest.getForEntity(bookUrl, BookDto::class.java)
-            } catch (e: HttpClientErrorException) {
-                return ResponseEntity.status(404).build()
-            }
-
-            return response
-        }
-
-        override fun getFallback(): ResponseEntity<BookDto> {
-            return ResponseEntity(HttpStatus.NOT_FOUND)
-        }
-    }
-
-    private inner class PostBookForSale(private val bookForSaleDto: BookForSaleDto)
-        : HystrixCommand<Int>(HystrixCommandGroupKey.Factory.asKey("Post book for sale")) {
-
-        override fun run(): Int {
-
-            var headers = HttpHeaders()
-            headers.contentType = MediaType.APPLICATION_JSON_UTF8
-
-            val entity = HttpEntity<BookForSaleDto>(
-                    bookForSaleDto, headers)
-            try {
-                val bookUrl = "${bookHost}/books/store"
-                rest.exchange(bookUrl, HttpMethod.POST, entity, Void::class.java)
-            } catch (e: HttpClientErrorException) {
-
-                return 404
-            }
-
-            return 200
-        }
-
-        override fun getFallback(): Int {
-            return 400
-        }
-    }
+//    private inner class PostBookForSale(private val bookForSaleDto: BookForSaleDto)
+//        : HystrixCommand<Int>(HystrixCommandGroupKey.Factory.asKey("Post book for sale")) {
+//
+//        override fun run(): Int {
+//
+//            var headers = HttpHeaders()
+//            headers.contentType = MediaType.APPLICATION_JSON_UTF8
+//
+//            val entity = HttpEntity<BookForSaleDto>(
+//                    bookForSaleDto, headers)
+//            try {
+//                val bookUrl = "${bookHost}/books/store"
+//                rest.exchange(bookUrl, HttpMethod.POST, entity, Void::class.java)
+//            } catch (e: HttpClientErrorException) {
+//
+//                return 404
+//            }
+//
+//            return 200
+//        }
+//
+//        override fun getFallback(): Int {
+//            return 400
+//        }
+//    }
 
 
     private fun isDtoFieldsNotNull(memberDto: MemberDto): Boolean {
