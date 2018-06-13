@@ -47,11 +47,10 @@ modify info of other members or specify books that they are selling.
 
 #### Bookstore (Store module)
 From the bookstore, members (students) can see all books that are posted for sale by other students.
-A member is able to retrieve the list of books that are sold by other students.
 A member can filter the books by their name, by the name of the seller or by their price.
 Books can also be filtered by the last 10 events in which a member registers the fact that he wants to sell a book.
 Book module communicates with store module using AMQP (RabbitMq). Store module subscribes to the queue containing
-new entries to be inserted into the DB of the store module.
+new books for sale to be inserted into the DB of the store module.
 
 ##### Security:
 Registered members can modify the information of the books that they have posted for sale, such as their price,
@@ -90,7 +89,7 @@ Spring framework, in addition to some other libraries is used for testing and pr
 
 **Production**: Docker, Docker-compose, Netfix stack (Zuul, Eureka, Ribbon), Hystrix, RabbitMq, Redis and Postgres.
 
-**End to End Tests**: Testcontainers library for running Docker and Docker-Compose fir end-to-end tests.
+**End to End Tests**: Testcontainers library for running Docker and Docker-Compose for end-to-end tests.
 
 **Isolated Tests**:  RestAssured and Wiremock to mock other modules.
 
