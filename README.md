@@ -75,7 +75,7 @@ Up time depends on hardware (in my case it takes around 1-2 minutes)
 
 
 ### How is the application implemented and technologies used
-![Diagram](./Exam_diagram.png)  
+![Diagram](./diagram.png)  
 
 
 - Gateway uses Zuul for load balancing and proxying. THe gateway stores user credentials and is used for authentication, via Redis.
